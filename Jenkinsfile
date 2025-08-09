@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('version') {
       steps {
-        sh 'source ~/.zshrc'
+        sh 'export PATH="/Users/cardze/miniforge3/bin:$PATH"'
         sh 'conda activate base'
         sh 'python --version'
       }
