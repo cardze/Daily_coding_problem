@@ -3,6 +3,7 @@ pipeline {
   stages {
     stage('version') {
       steps {
+        sh 'source ~/.zshrc'
         sh 'conda activate base'
         sh 'python --version'
       }
