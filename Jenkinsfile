@@ -4,6 +4,8 @@ pipeline {
     stage('version') {
       steps {
         sh 'export PATH="/Users/cardze/miniforge3/bin:$PATH"'
+        sh 'echo $PATH'
+        sh 'conda --version'
         sh 'conda activate base'
         sh 'python --version'
       }
