@@ -3,10 +3,6 @@ pipeline {
   stages {
     stage('version') {
       steps {
-        sh 'export PATH="/Users/cardze/miniforge3/bin:$PATH"'
-        sh 'echo $PATH'
-        sh 'conda --version'
-        sh 'conda activate base'
         sh 'python --version'
       }
     }
@@ -17,13 +13,25 @@ pipeline {
     }
     stage('test') {
       steps {
-        sh 'pytest --maxfail=1 --disable-warnings -q'
+        sh '''
+        export PATH="/Users/cardze/miniforge3/bin:$PATH"
+        echo $PATH
+        conda --version
+        conda activate base
+        pytest --maxfail=1 --disable-warnings -q
+        '''
       }
     }
     stage('test-performance') {
       steps {
-        sh 'pytest --maxfail=1 --disable-warnings --durations=0 -q'
-        sh 'pytest --maxfail=1 --disable-warnings --durations=1 -q'
+        sh '''
+        export PATH="/Users/cardze/miniforge3/bin:$PATH"
+        echo $PATH
+        conda --version
+        conda activate base
+        pytest --maxfail=1 --disable-warnings --durations=0 -q
+        pytest --maxfail=1 --disable-warnings --durations=1 -q
+        '''
       }
     }
   }
