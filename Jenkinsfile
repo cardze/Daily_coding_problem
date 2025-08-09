@@ -1,18 +1,15 @@
 pipeline {
-    agent {
-      docker {
-        image 'python:3'
-        label 'my-build-agent'
+  agent any
+  stages {
+    stage('version') {
+      steps {
+        sh 'python3 --version'
       }
     }
-    stages {
-        stage('Test') {
-            steps {
-              sh """
-              pip install -r requirements.txt
-              pytest test.py
-              """
-            }
-        }
+    stage('hello') {
+      steps {
+        sh 'python3 hello.py'
+      }
     }
+  }
 }
