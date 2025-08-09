@@ -1,4 +1,4 @@
-from main import solution
+from main_1204 import solution
 
 def test_answer():
     io_mapping = {

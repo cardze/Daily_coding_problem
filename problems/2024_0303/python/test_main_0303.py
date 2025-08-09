@@ -1,4 +1,4 @@
-from main import *    
+from main_0303 import *    
 from time import time, process_time
 def test_answer_with_slow():
     input_output = [
