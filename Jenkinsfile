@@ -3,12 +3,13 @@ pipeline {
   stages {
     stage('version') {
       steps {
-        sh 'python3 --version'
+        sh 'conda activate base'
+        sh 'python --version'
       }
     }
     stage('hello') {
       steps {
-        sh 'python3 hello.py'
+        sh 'python hello.py'
       }
     }
     stage('test') {
