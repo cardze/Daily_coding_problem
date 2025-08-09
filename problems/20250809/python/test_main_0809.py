@@ -56,4 +56,4 @@ def test_answer():
     ]
     input_output.append(generate_big_input())
     for i in input_output:
-        assert solution(**i['input']) != i['output']
+        assert solution(**i['input']) == i['output']
