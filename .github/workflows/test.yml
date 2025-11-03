@@ -25,4 +25,10 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run tests
-        run: pytest
+        run: pytest --maxfail=1 --disable-warnings -q
+
+      - name: Run performance tests with duration 0
+        run: python3 -m pytest --maxfail=1 --disable-warnings --durations=0 -q
+      
+      - name: Run performance tests with duration 1
+        run: python3 -m pytest --maxfail=1 --disable-warnings --durations=1 -q''
