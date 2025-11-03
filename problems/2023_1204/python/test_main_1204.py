@@ -8,5 +8,3 @@ def test_answer():
     }
     for k,v in io_mapping.items():
         assert solution(k) == v
-
-
