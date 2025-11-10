@@ -31,7 +31,7 @@ jobs:
         run: pytest --maxfail=1 --disable-warnings -q
 
       - name: Run performance tests with duration 0
-        run: python3 -m pytest --maxfail=1 --disable-warnings --durations=0 -q
+        run: pytest --maxfail=1 --disable-warnings --durations=0 -q
       
       - name: Run performance tests with duration 1
-        run: python3 -m pytest --maxfail=1 --disable-warnings --durations=1 -q
+        run: pytest --maxfail=1 --disable-warnings --durations=1 -q
