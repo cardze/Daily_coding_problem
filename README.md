@@ -6,7 +6,23 @@ This repository contains solutions to coding problems from [Daily Coding Problem
 
 This repository provides a sync script to help track which Daily Coding Problem numbers correspond to solutions in this repository.
 
-**Usage:**
+### Installation
+
+For basic tracking functionality:
+```bash
+# No additional dependencies needed
+python sync_problems.py list
+```
+
+For fetching new problems from the website:
+```bash
+# Install optional dependencies
+pip install -r requirements.txt
+```
+
+### Usage
+
+**Basic Commands:**
 ```bash
 # List all problems and their DCP numbers (if assigned)
 python sync_problems.py list
@@ -20,6 +36,22 @@ python sync_problems.py untracked
 # Initialize tracking file (first time setup)
 python sync_problems.py init
 ```
+
+**Fetching New Problems** (requires `beautifulsoup4` and `requests`):
+```bash
+# Fetch a problem from Daily Coding Problem website
+# This will create a new directory with problem structure
+python sync_problems.py fetch 500
+
+# The fetch command will:
+# - Scrape problem details from dailycodingproblem.com
+# - Create a new YYYY_MMDD directory
+# - Generate readme.md with problem description
+# - Create python/main.py and python/test.py templates
+# - Add the problem to tracking automatically
+```
+
+**Note:** Daily Coding Problem requires a subscription for full access. The fetch command works best with a valid session/login.
 
 The script maintains a `problem_tracking.json` file that maps problem directories to their Daily Coding Problem numbers, making it easy to reference the original problems on dailycodingproblem.com.
 
@@ -53,6 +85,15 @@ pytest test.py
 ## Contributing
 
 When adding new problems:
+
+**Option 1: Fetch from website (recommended if you have access)**
+```bash
+pip install -r requirements.txt
+python sync_problems.py fetch <dcp_number>
+# Then complete the generated templates
+```
+
+**Option 2: Manual creation**
 1. Create a new folder with date format `YYYY_MMDD`
 2. Add a `readme.md` with the problem description
 3. Include the problem source (company name or problem number if known)
