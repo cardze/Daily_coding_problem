@@ -37,16 +37,17 @@ class ProblemSync:
             json.dump(self.tracking_data, f, indent=2)
         print(f"✓ Saved tracking data to {PROBLEM_TRACKING_FILE}")
     
+    def _get_problem_directories(self) -> List[str]:
+        """Get sorted list of problem directory names."""
+        if not self.problems_dir.exists():
+            return []
+        return sorted([d.name for d in self.problems_dir.iterdir() if d.is_dir()])
+    
     def list_problems(self):
         """List all problems in the repository."""
         print("\n=== Daily Coding Problem Repository - Problem List ===\n")
         
-        if not self.problems_dir.exists():
-            print("Error: problems/ directory not found")
-            return
-        
-        # Get all problem directories
-        problem_dirs = sorted([d for d in self.problems_dir.iterdir() if d.is_dir()])
+        problem_dirs = self._get_problem_directories()
         
         if not problem_dirs:
             print("No problems found in repository")
@@ -54,8 +55,8 @@ class ProblemSync:
         
         print(f"Found {len(problem_dirs)} problem(s):\n")
         
-        for problem_dir in problem_dirs:
-            dir_name = problem_dir.name
+        for dir_name in problem_dirs:
+            problem_dir = self.problems_dir / dir_name
             readme_path = problem_dir / "readme.md"
             
             # Get DCP number if tracked
@@ -120,7 +121,7 @@ class ProblemSync:
         """Show problems without DCP numbers."""
         print("\n=== Problems Missing DCP Numbers ===\n")
         
-        problem_dirs = sorted([d.name for d in self.problems_dir.iterdir() if d.is_dir()])
+        problem_dirs = self._get_problem_directories()
         untracked = [dir_name for dir_name in problem_dirs if self._is_untracked(dir_name)]
         
         if not untracked:
@@ -133,7 +134,7 @@ class ProblemSync:
     
     def init_tracking(self):
         """Initialize tracking file with current problems."""
-        problem_dirs = sorted([d.name for d in self.problems_dir.iterdir() if d.is_dir()])
+        problem_dirs = self._get_problem_directories()
         
         print(f"\nInitializing tracking for {len(problem_dirs)} problem(s)...")
         
