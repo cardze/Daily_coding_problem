@@ -82,20 +82,24 @@ class ProblemSync:
             title = "Unknown"
             company = None
             if readme_path.exists():
-                with open(readme_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                    lines = content.split('\n')
-                    
-                    # Get title from first line
-                    if lines and lines[0].startswith('#'):
-                        title = lines[0].lstrip('#').strip()
-                    
-                    # Check for company attribution
-                    if "Asked by:" in content:
-                        for line in lines:
-                            if "Asked by:" in line:
-                                company = line.split("Asked by:")[-1].strip().rstrip('*')
-                                break
+                try:
+                    with open(readme_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        lines = content.split('\n')
+                        
+                        # Get title from first line
+                        if lines and lines[0].startswith('#'):
+                            title = lines[0].lstrip('#').strip()
+                        
+                        # Check for company attribution
+                        if "Asked by:" in content:
+                            for line in lines:
+                                if "Asked by:" in line:
+                                    company = line.split("Asked by:")[-1].strip().rstrip('*')
+                                    break
+                except (IOError, UnicodeDecodeError) as e:
+                    # Fall back to defaults if readme can't be read
+                    pass
             
             # Format output
             dcp_str = f"DCP #{dcp_number}" if dcp_number else "DCP #???"
