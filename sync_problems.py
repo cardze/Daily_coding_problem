@@ -49,9 +49,13 @@ class ProblemSync:
     
     def _save_tracking_data(self):
         """Save problem tracking data to JSON file."""
-        with open(self.tracking_file, 'w', encoding='utf-8') as f:
-            json.dump(self.tracking_data, f, indent=2)
-        print(f"✓ Saved tracking data to {PROBLEM_TRACKING_FILE}")
+        try:
+            with open(self.tracking_file, 'w', encoding='utf-8') as f:
+                json.dump(self.tracking_data, f, indent=2)
+            print(f"✓ Saved tracking data to {PROBLEM_TRACKING_FILE}")
+        except (IOError, PermissionError) as e:
+            print(f"✗ Error: Failed to save tracking data: {e}")
+            sys.exit(1)
     
     def _get_problem_directories(self) -> List[str]:
         """Get sorted list of problem directory names."""
