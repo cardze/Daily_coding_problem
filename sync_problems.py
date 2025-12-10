@@ -11,6 +11,7 @@ It provides tools to:
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -18,7 +19,7 @@ from typing import Dict, List, Optional
 PROBLEM_TRACKING_FILE = "problem_tracking.json"
 
 class ProblemSync:
-    def __init__(self, repo_root: Path = None):
+    def __init__(self, repo_root: Optional[Path] = None):
         self.repo_root = repo_root or Path(__file__).parent
         self.problems_dir = self.repo_root / "problems"
         self.tracking_file = self.repo_root / PROBLEM_TRACKING_FILE
@@ -68,19 +69,21 @@ class ProblemSync:
             # Get DCP number if tracked
             dcp_number = self.tracking_data["problems"].get(dir_name, {}).get("dcp_number")
             
-            # Try to read problem title from readme
+            # Try to read problem title and company from readme
             title = "Unknown"
             company = None
             if readme_path.exists():
                 with open(readme_path, 'r', encoding='utf-8') as f:
-                    first_line = f.readline().strip()
-                    if first_line.startswith('#'):
-                        title = first_line.lstrip('#').strip()
+                    content = f.read()
+                    lines = content.split('\n')
+                    
+                    # Get title from first line
+                    if lines and lines[0].startswith('#'):
+                        title = lines[0].lstrip('#').strip()
                     
                     # Check for company attribution
-                    content = f.read()
                     if "Asked by:" in content:
-                        for line in content.split('\n'):
+                        for line in lines:
                             if "Asked by:" in line:
                                 company = line.split("Asked by:")[-1].strip().rstrip('*')
                                 break
@@ -160,8 +163,6 @@ class ProblemSync:
 
 
 def main():
-    import sys
-    
     syncer = ProblemSync()
     
     if len(sys.argv) < 2:
