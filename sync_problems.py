@@ -27,13 +27,19 @@ class ProblemSync:
     def _load_tracking_data(self) -> Dict:
         """Load problem tracking data from JSON file."""
         if self.tracking_file.exists():
-            with open(self.tracking_file, 'r') as f:
-                return json.load(f)
+            try:
+                with open(self.tracking_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except json.JSONDecodeError as e:
+                print(f"Error: Corrupted tracking file {PROBLEM_TRACKING_FILE}")
+                print(f"Details: {e}")
+                print("Run 'python sync_problems.py init' to recreate the file")
+                return {"problems": {}}
         return {"problems": {}}
     
     def _save_tracking_data(self):
         """Save problem tracking data to JSON file."""
-        with open(self.tracking_file, 'w') as f:
+        with open(self.tracking_file, 'w', encoding='utf-8') as f:
             json.dump(self.tracking_data, f, indent=2)
         print(f"✓ Saved tracking data to {PROBLEM_TRACKING_FILE}")
     
@@ -66,7 +72,7 @@ class ProblemSync:
             title = "Unknown"
             company = None
             if readme_path.exists():
-                with open(readme_path, 'r') as f:
+                with open(readme_path, 'r', encoding='utf-8') as f:
                     first_line = f.readline().strip()
                     if first_line.startswith('#'):
                         title = first_line.lstrip('#').strip()
@@ -94,6 +100,10 @@ class ProblemSync:
         
         if not problem_path.exists():
             print(f"✗ Error: Directory '{directory}' not found in problems/")
+            return False
+        
+        if dcp_number <= 0:
+            print(f"✗ Error: DCP number must be positive, got {dcp_number}")
             return False
         
         # Update tracking data
