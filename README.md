@@ -1,6 +1,27 @@
 # Daily Coding Problem Solutions
 
-This repository contains solutions to coding problems from various sources, including [Daily Coding Problem](https://www.dailycodingproblem.com/).
+This repository contains solutions to coding problems from [Daily Coding Problem](https://www.dailycodingproblem.com/).
+
+## Syncing with Daily Coding Problem
+
+This repository provides a sync script to help track which Daily Coding Problem numbers correspond to solutions in this repository.
+
+**Usage:**
+```bash
+# List all problems and their DCP numbers (if assigned)
+python sync_problems.py list
+
+# Add a DCP number to a problem
+python sync_problems.py add 2023_1204 387
+
+# Show problems that don't have DCP numbers yet
+python sync_problems.py untracked
+
+# Initialize tracking file (first time setup)
+python sync_problems.py init
+```
+
+The script maintains a `problem_tracking.json` file that maps problem directories to their Daily Coding Problem numbers, making it easy to reference the original problems on dailycodingproblem.com.
 
 ## Repository Structure
 
@@ -38,3 +59,4 @@ When adding new problems:
 4. Create `python/main.py` with your solution
 5. Create `python/test.py` with test cases
 6. Update [PROBLEMS.md](PROBLEMS.md) with the new problem
+7. Use `python sync_problems.py add <directory> <dcp_number>` to track the DCP number

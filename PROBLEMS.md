@@ -2,10 +2,14 @@
 
 This document provides an index of all coding problems in this repository.
 
+> **Note:** Use `python sync_problems.py list` to see an up-to-date list with Daily Coding Problem numbers.  
+> Use `python sync_problems.py add <directory> <dcp_number>` to track DCP numbers for problems.
+
 ## Problems List
 
 ### Problem 2023-12-04
 **Directory:** `problems/2023_1204/`  
+**DCP Number:** #387 *(tracked in problem_tracking.json)*  
 **Asked by:** Google  
 **Description:** Given a string, return the first recurring character in it, or null if there is no recurring character.
 
@@ -17,6 +21,7 @@ This document provides an index of all coding problems in this repository.
 
 ### Problem 2023-12-15
 **Directory:** `problems/2023_1215/`  
+**DCP Number:** Not yet identified  
 **Description:** Given a start word, an end word, and a dictionary of valid words, find the shortest transformation sequence from start to end such that only one letter is changed at each step of the sequence, and each transformed word exists in the dictionary.
 
 **Example:**
@@ -27,6 +32,7 @@ This document provides an index of all coding problems in this repository.
 
 ### Problem 2023-12-18
 **Directory:** `problems/2023_1218/`  
+**DCP Number:** Not yet identified  
 **Description:** Write a function to flatten a nested dictionary. Namespace the keys with a period.
 
 **Example:**
@@ -52,6 +58,7 @@ Output: {
 
 ### Problem 2023-12-20
 **Directory:** `problems/2023_1220/`  
+**DCP Number:** Not yet identified  
 **Description:** Given a string s and a list of words where each word is the same length, find all starting indices of substrings in s that is a concatenation of every word in words exactly once.
 
 **Example:**
@@ -62,6 +69,7 @@ Output: {
 
 ### Problem 2023-12-21
 **Directory:** `problems/2023_1221/`  
+**DCP Number:** Not yet identified  
 **Description:** Determine whether there exists a one-to-one character mapping from one string s1 to another s2.
 
 **Example:**
@@ -72,6 +80,7 @@ Output: {
 
 ### Problem 2024-03-03
 **Directory:** `problems/2024_0303/`  
+**DCP Number:** Not yet identified  
 **Description:** Activity scheduling problem - given total days (n), start days (s), end days (e), scores (a), and max activities per day (m), find the maximum score achievable.
 
 **Parameters:**
