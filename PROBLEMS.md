@@ -59,7 +59,7 @@ Output: {
 ### Problem 2023-12-20
 **Directory:** `problems/2023_1220/`  
 **DCP Number:** Not yet identified  
-**Description:** Given a string s and a list of words where each word is the same length, find all starting indices of substrings in s that is a concatenation of every word in words exactly once.
+**Description:** Given a string s and a list of words, where each word is the same length, find all starting indices of substrings in s that are a concatenation of every word in words exactly once.
 
 **Example:**
 - Input: s = `"dogcatcatcodecatdog"`, words = `["cat", "dog"]`

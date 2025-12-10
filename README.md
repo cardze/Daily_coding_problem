@@ -70,7 +70,17 @@ See [PROBLEMS.md](PROBLEMS.md) for a complete list of all problems with descript
 ## Testing
 
 This repository uses pytest for testing:
-- Run all tests: `pytest test.py`
+
+**Run all tests:**
+```bash
+# Test the sync script
+pytest test_sync_problems.py -v
+
+# Test individual problems
+pytest test.py
+```
+
+**Test execution time analysis:**
 - Show all test execution times: `pytest test.py --durations=0`
 - Show only slowest test: `pytest test.py --durations=1`
 
