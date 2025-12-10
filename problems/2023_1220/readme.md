@@ -1,7 +1,21 @@
-Given a string s and a list of words words, where each word is the same length, find all starting indices of substrings in s that is a concatenation of every word in words exactly once.
+# Substring Concatenation
 
-For example, given s = "dogcatcatcodecatdog" and words = ["cat", "dog"], return [0, 13], since "dogcat" starts at index 0 and "catdog" starts at index 13.
+**Date:** 2023-12-20
 
-Given s = "barfoobazbitbyte" and words = ["dog", "cat"], return [] since there are no substrings composed of "dog" and "cat" in s.
+## Problem Description
+
+Given a string s and a list of words words, where each word is the same length, find all starting indices of substrings in s that are a concatenation of every word in words exactly once.
 
 The order of the indices does not matter.
+
+## Examples
+
+**Example 1:**
+- Input: s = `"dogcatcatcodecatdog"`, words = `["cat", "dog"]`
+- Output: `[0, 13]`
+- Explanation: `"dogcat"` starts at index 0 and `"catdog"` starts at index 13
+
+**Example 2:**
+- Input: s = `"barfoobazbitbyte"`, words = `["dog", "cat"]`
+- Output: `[]`
+- Explanation: No substrings composed of "dog" and "cat" in s
