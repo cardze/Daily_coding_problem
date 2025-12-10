@@ -13,8 +13,6 @@ import pytest
 import sys
 from pathlib import Path
 from unittest.mock import patch, mock_open, MagicMock
-import tempfile
-import shutil
 
 # Add parent directory to path to import sync_problems
 sys.path.insert(0, str(Path(__file__).parent))
