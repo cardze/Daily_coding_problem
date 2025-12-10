@@ -100,23 +100,28 @@ class ProblemSync:
             self.tracking_data["problems"][directory] = {}
         
         self.tracking_data["problems"][directory]["dcp_number"] = dcp_number
+        self.tracking_data["problems"][directory]["notes"] = f"DCP #{dcp_number} identified"
         self._save_tracking_data()
         
         print(f"✓ Added DCP #{dcp_number} to {directory}")
         return True
+    
+    def _is_untracked(self, dir_name: str) -> bool:
+        """Check if a problem directory is missing DCP number."""
+        if dir_name not in self.tracking_data["problems"]:
+            return True
+        if "dcp_number" not in self.tracking_data["problems"][dir_name]:
+            return True
+        if self.tracking_data["problems"][dir_name]["dcp_number"] is None:
+            return True
+        return False
     
     def show_untracked(self):
         """Show problems without DCP numbers."""
         print("\n=== Problems Missing DCP Numbers ===\n")
         
         problem_dirs = sorted([d.name for d in self.problems_dir.iterdir() if d.is_dir()])
-        untracked = []
-        
-        for dir_name in problem_dirs:
-            if dir_name not in self.tracking_data["problems"] or \
-               "dcp_number" not in self.tracking_data["problems"][dir_name] or \
-               self.tracking_data["problems"][dir_name]["dcp_number"] is None:
-                untracked.append(dir_name)
+        untracked = [dir_name for dir_name in problem_dirs if self._is_untracked(dir_name)]
         
         if not untracked:
             print("✓ All problems have DCP numbers assigned!")
