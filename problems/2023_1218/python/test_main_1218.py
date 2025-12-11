@@ -1,4 +1,4 @@
-from main import *
+from main_1218 import *
 
 def test_answer():
     input_output = [
