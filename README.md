@@ -1,113 +1,56 @@
-# Daily Coding Problem Solutions
+# Daily_coding_problem
+- try solving the problems from [here](https://www.dailycodingproblem.com/)
 
-This repository contains solutions to coding problems from [Daily Coding Problem](https://www.dailycodingproblem.com/).
+## Setup
 
-## Syncing with Daily Coding Problem
-
-This repository provides a sync script to help track which Daily Coding Problem numbers correspond to solutions in this repository.
-
-### Installation
-
-For basic tracking functionality:
+Install dependencies:
 ```bash
-# No additional dependencies needed
-python sync_problems.py list
-```
-
-For fetching new problems from the website:
-```bash
-# Install optional dependencies
 pip install -r requirements.txt
 ```
 
-### Usage
+## Adding New Problems
 
-**Basic Commands:**
+You can automatically create problem templates from Daily Coding Problem emails or text files using the email parser:
+
+### From a text file:
 ```bash
-# List all problems and their DCP numbers (if assigned)
-python sync_problems.py list
-
-# Add a DCP number to a problem
-python sync_problems.py add 2023_1204 387
-
-# Show problems that don't have DCP numbers yet
-python sync_problems.py untracked
-
-# Initialize tracking file (first time setup)
-python sync_problems.py init
+python add_problem.py --text problem.txt
 ```
 
-**Fetching New Problems** (requires `beautifulsoup4` and `requests`):
+### From an email file (.eml format):
 ```bash
-# Fetch a problem from Daily Coding Problem website
-# This will create a new directory with problem structure
-python sync_problems.py fetch 500
-
-# The fetch command will:
-# - Scrape problem details from dailycodingproblem.com
-# - Create a new YYYY_MMDD directory
-# - Generate readme.md with problem description
-# - Create python/main.py and python/test.py templates
-# - Add the problem to tracking automatically
+python add_problem.py --email daily_problem.eml
 ```
 
-**Note:** Daily Coding Problem requires a subscription for full access. The fetch command works best with a valid session/login.
+### From stdin:
+```bash
+cat problem.txt | python add_problem.py --stdin
+```
 
-The script maintains a `problem_tracking.json` file that maps problem directories to their Daily Coding Problem numbers, making it easy to reference the original problems on dailycodingproblem.com.
+### Specify a custom date:
+```bash
+python add_problem.py --text problem.txt --date 2024-03-15
+```
 
-## Repository Structure
-
-Problems are organized by date in the `problems/` directory:
-- Each problem is in a folder named `YYYY_MMDD` (e.g., `2023_1204`)
-- Each problem folder contains:
-  - `readme.md` - Problem description
-  - `python/` - Python solutions and tests
-
-## Problem Index
-
-See [PROBLEMS.md](PROBLEMS.md) for a complete list of all problems with descriptions and dates.
+This will automatically create:
+- `problems/YYYY_MMDD/readme.md` - Problem description
+- `problems/YYYY_MMDD/python/main.py` - Solution template
+- `problems/YYYY_MMDD/python/test.py` - Test template
 
 ## Testing
 
-This repository uses pytest for testing:
-
-**Run all tests:**
+### Run tests for a specific problem:
 ```bash
-# Test the sync script
-pytest test_sync_problems.py -v
-
-# Test individual problems
-pytest test.py
+pytest problems/YYYY_MMDD/python/test.py
 ```
 
-**Test execution time analysis:**
-- Show all test execution times: `pytest test.py --durations=0`
-- Show only slowest test: `pytest test.py --durations=1`
-
-## Running Tests for Individual Problems
-
-Navigate to the problem's Python directory and run:
+### Run tests with execution time:
 ```bash
-cd problems/YYYY_MMDD/python
-pytest test.py
+pytest test.py --durations=0  # show all tests' execution time
+pytest test.py --durations=1  # show only slowest execution time
 ```
 
-## Contributing
-
-When adding new problems:
-
-**Option 1: Fetch from website (recommended if you have access)**
+### Run email parser tests:
 ```bash
-pip install -r requirements.txt
-python sync_problems.py fetch <dcp_number>
-# Then complete the generated templates
+pytest test_email_parser.py
 ```
-
-**Option 2: Manual creation**
-1. Create a new folder with date format `YYYY_MMDD`
-2. Add a `readme.md` with the problem description
-3. Include the problem source (company name or problem number if known)
-4. Create `python/main.py` with your solution
-5. Create `python/test.py` with test cases
-6. Update [PROBLEMS.md](PROBLEMS.md) with the new problem
-7. Use `python sync_problems.py add <directory> <dcp_number>` to track the DCP number
