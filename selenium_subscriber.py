@@ -8,12 +8,14 @@ as a new subscriber to receive daily coding problems via email.
 
 import os
 import time
+import tempfile
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 
 
@@ -89,13 +91,13 @@ class DailyCodingProblemSubscriber:
             for selector in button_selectors:
                 try:
                     if 'contains' in selector:
-                        # XPath for text content
-                        submit_button = self.driver.find_element(By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'subscribe')]")
+                        # XPath for text content (case-insensitive)
+                        submit_button = self.driver.find_element(By.XPATH, "//button[contains(., 'Subscribe') or contains(., 'subscribe') or contains(., 'SUBSCRIBE')]")
                     else:
                         submit_button = self.driver.find_element(By.CSS_SELECTOR, selector)
                     if submit_button:
                         break
-                except:
+                except (NoSuchElementException, Exception):
                     continue
             
             if not submit_button:
@@ -110,15 +112,16 @@ class DailyCodingProblemSubscriber:
             
             # Check for success message
             try:
+                # Look for common success keywords
                 success_elements = self.driver.find_elements(By.XPATH, 
-                    "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'success') or "
-                    "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'thank') or "
-                    "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'subscribed')]"
+                    "//*[contains(., 'success') or contains(., 'Success') or "
+                    "contains(., 'thank') or contains(., 'Thank') or "
+                    "contains(., 'subscribed') or contains(., 'Subscribed')]"
                 )
                 if success_elements:
                     print(f"✓ Successfully subscribed with email: {self.email}")
                     return True
-            except:
+            except (NoSuchElementException, Exception):
                 pass
             
             print(f"✓ Subscription request submitted for: {self.email}")
@@ -132,10 +135,10 @@ class DailyCodingProblemSubscriber:
         finally:
             # Take a screenshot for debugging
             try:
-                screenshot_path = "/tmp/subscription_screenshot.png"
+                screenshot_path = os.path.join(tempfile.gettempdir(), "subscription_screenshot.png")
                 self.driver.save_screenshot(screenshot_path)
                 print(f"Screenshot saved to: {screenshot_path}")
-            except:
+            except Exception:
                 pass
     
     def close(self):
