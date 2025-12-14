@@ -357,18 +357,11 @@ def main():
     
     args = parser.parse_args()
     
-    # If no command specified, default to subscribe for backward compatibility
+    # If no command specified, show help
     if not args.command:
-        print("No command specified. Use 'subscribe' or 'check-email'.")
-        print("For backward compatibility, assuming 'subscribe' command.")
-        print("Run with --help to see available commands.\n")
-        args.command = 'subscribe'
-        # Create a namespace with default subscribe args
-        class Args:
-            email = None
-            no_headless = False
-        args = Args()
-        args.command = 'subscribe'
+        parser.print_help()
+        print("\nPlease specify a command: 'subscribe' or 'check-email'")
+        exit(1)
     
     if args.command == 'subscribe':
         subscriber = None
@@ -402,6 +395,7 @@ def main():
         finally:
             if checker:
                 checker.close()
+
 
 
 
