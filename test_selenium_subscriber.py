@@ -2,8 +2,9 @@
 """
 Test script for selenium_subscriber.py
 
-This tests the basic functionality of the DailyCodingProblemSubscriber class
-without actually making requests to the website.
+This tests the basic functionality of the DailyCodingProblemSubscriber 
+and DailyCodingProblemEmailChecker classes without actually making 
+requests to the website or email servers.
 """
 
 import unittest
@@ -74,7 +75,73 @@ class TestDailyCodingProblemSubscriber(unittest.TestCase):
         mock_chrome.return_value.quit.assert_called_once()
 
 
+class TestDailyCodingProblemEmailChecker(unittest.TestCase):
+    """Test cases for DailyCodingProblemEmailChecker class."""
+    
+    def test_initialization_with_email_and_password(self):
+        """Test that email checker can be initialized with credentials."""
+        from selenium_subscriber import DailyCodingProblemEmailChecker
+        
+        checker = DailyCodingProblemEmailChecker(
+            email="test@gmail.com",
+            password="app_password"
+        )
+        
+        self.assertEqual(checker.email, "test@gmail.com")
+        self.assertEqual(checker.password, "app_password")
+        self.assertEqual(checker.imap_server, "imap.gmail.com")
+    
+    @patch.dict(os.environ, {'DCP_EMAIL': 'env@gmail.com', 'DCP_EMAIL_PASSWORD': 'env_pass'})
+    def test_initialization_with_env_vars(self):
+        """Test that email checker can use credentials from environment."""
+        from selenium_subscriber import DailyCodingProblemEmailChecker
+        
+        checker = DailyCodingProblemEmailChecker()
+        
+        self.assertEqual(checker.email, "env@gmail.com")
+        self.assertEqual(checker.password, "env_pass")
+    
+    @patch.dict(os.environ, {}, clear=True)
+    def test_initialization_without_email_raises_error(self):
+        """Test that initialization fails without email."""
+        from selenium_subscriber import DailyCodingProblemEmailChecker
+        
+        with self.assertRaises(ValueError) as context:
+            checker = DailyCodingProblemEmailChecker(password="test")
+        
+        self.assertIn("Email must be provided", str(context.exception))
+    
+    @patch.dict(os.environ, {}, clear=True)
+    def test_initialization_without_password_raises_error(self):
+        """Test that initialization fails without password."""
+        from selenium_subscriber import DailyCodingProblemEmailChecker
+        
+        with self.assertRaises(ValueError) as context:
+            checker = DailyCodingProblemEmailChecker(email="test@example.com")
+        
+        self.assertIn("Password must be provided", str(context.exception))
+    
+    def test_auto_detect_imap_server(self):
+        """Test IMAP server auto-detection for various email providers."""
+        from selenium_subscriber import DailyCodingProblemEmailChecker
+        
+        test_cases = [
+            ("test@gmail.com", "imap.gmail.com"),
+            ("test@yahoo.com", "imap.mail.yahoo.com"),
+            ("test@outlook.com", "imap-mail.outlook.com"),
+            ("test@hotmail.com", "imap-mail.outlook.com"),
+        ]
+        
+        for email, expected_server in test_cases:
+            checker = DailyCodingProblemEmailChecker(
+                email=email,
+                password="test_password"
+            )
+            self.assertEqual(checker.imap_server, expected_server)
+
+
 if __name__ == '__main__':
     # Add the parent directory to the path so we can import selenium_subscriber
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     unittest.main()
+
