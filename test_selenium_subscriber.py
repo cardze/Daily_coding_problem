@@ -84,22 +84,25 @@ class TestDailyCodingProblemEmailChecker(unittest.TestCase):
         
         checker = DailyCodingProblemEmailChecker(
             email="test@gmail.com",
-            password="app_password"
+            password="app_password",
+            use_oauth=False  # Explicitly disable OAuth for this test
         )
         
         self.assertEqual(checker.email, "test@gmail.com")
         self.assertEqual(checker.password, "app_password")
         self.assertEqual(checker.imap_server, "imap.gmail.com")
+        self.assertFalse(checker.use_oauth)
     
     @patch.dict(os.environ, {'DCP_EMAIL': 'env@gmail.com', 'DCP_EMAIL_PASSWORD': 'env_pass'})
     def test_initialization_with_env_vars(self):
         """Test that email checker can use credentials from environment."""
         from selenium_subscriber import DailyCodingProblemEmailChecker
         
-        checker = DailyCodingProblemEmailChecker()
+        checker = DailyCodingProblemEmailChecker(use_oauth=False)
         
         self.assertEqual(checker.email, "env@gmail.com")
         self.assertEqual(checker.password, "env_pass")
+        self.assertFalse(checker.use_oauth)
     
     @patch.dict(os.environ, {}, clear=True)
     def test_initialization_without_email_raises_error(self):
@@ -107,19 +110,28 @@ class TestDailyCodingProblemEmailChecker(unittest.TestCase):
         from selenium_subscriber import DailyCodingProblemEmailChecker
         
         with self.assertRaises(ValueError) as context:
-            checker = DailyCodingProblemEmailChecker(password="test")
+            checker = DailyCodingProblemEmailChecker(password="test", use_oauth=False)
         
         self.assertIn("Email must be provided", str(context.exception))
     
     @patch.dict(os.environ, {}, clear=True)
-    def test_initialization_without_password_raises_error(self):
-        """Test that initialization fails without password."""
+    def test_initialization_without_password_raises_error_when_not_oauth(self):
+        """Test that initialization fails without password when not using OAuth."""
         from selenium_subscriber import DailyCodingProblemEmailChecker
         
         with self.assertRaises(ValueError) as context:
-            checker = DailyCodingProblemEmailChecker(email="test@example.com")
+            checker = DailyCodingProblemEmailChecker(email="test@example.com", use_oauth=False)
         
         self.assertIn("Password must be provided", str(context.exception))
+    
+    def test_oauth_enabled_for_gmail(self):
+        """Test that OAuth is auto-enabled for Gmail when available."""
+        from selenium_subscriber import DailyCodingProblemEmailChecker, OAUTH_AVAILABLE
+        
+        if OAUTH_AVAILABLE:
+            # OAuth should be auto-enabled for Gmail when libraries are available
+            checker = DailyCodingProblemEmailChecker(email="test@gmail.com")
+            self.assertTrue(checker.use_oauth)
     
     def test_auto_detect_imap_server(self):
         """Test IMAP server auto-detection for various email providers."""
@@ -135,7 +147,8 @@ class TestDailyCodingProblemEmailChecker(unittest.TestCase):
         for email, expected_server in test_cases:
             checker = DailyCodingProblemEmailChecker(
                 email=email,
-                password="test_password"
+                password="test_password",
+                use_oauth=False
             )
             self.assertEqual(checker.imap_server, expected_server)
 

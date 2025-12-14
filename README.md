@@ -49,7 +49,31 @@ python selenium_subscriber.py subscribe --email your.email@example.com --no-head
 
 ### 2. Checking for New Problems in Your Email
 
-After subscribing, you can check your email inbox for new Daily Coding Problems every time you open the app:
+After subscribing, you can check your email inbox for new Daily Coding Problems every time you open the app.
+
+#### Easy Method: OAuth2 (Gmail Only - Recommended)
+
+For Gmail users, the easiest way is to use OAuth2 browser-based authentication (no password needed):
+
+```bash
+python selenium_subscriber.py check-email --email your@gmail.com --use-oauth
+```
+
+The first time you run this, you'll need to:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or select existing)
+3. Enable the Gmail API
+4. Create OAuth 2.0 credentials (Desktop app type)
+5. Download the credentials JSON file
+6. Save it as `gmail_credentials.json` in this directory
+7. Run the command above - a browser will open for you to authorize the app
+8. The authorization is saved, so you won't need to login again
+
+After the first setup, subsequent checks are automatic - no password needed!
+
+#### Alternative Method: App-Specific Password
+
+For non-Gmail accounts or if you prefer not to use OAuth2:
 
 ```bash
 python selenium_subscriber.py check-email --email your.email@example.com --password your_app_password
@@ -60,7 +84,7 @@ python selenium_subscriber.py check-email --email your.email@example.com --passw
 - The IMAP server is auto-detected based on your email domain (Gmail, Yahoo, Outlook, etc.)
 - You can specify `--days N` to check for problems from the last N days (default is 1)
 
-#### Setting up App-Specific Passwords
+#### Setting up App-Specific Passwords (if not using OAuth2)
 
 **For Gmail:**
 1. Go to your Google Account settings
@@ -78,6 +102,10 @@ python selenium_subscriber.py check-email --email your.email@example.com --passw
 
 ```bash
 export DCP_EMAIL=your.email@example.com
+# For OAuth2 (Gmail):
+python selenium_subscriber.py check-email --use-oauth
+
+# For password auth:
 export DCP_EMAIL_PASSWORD=your_app_specific_password
 python selenium_subscriber.py check-email
 ```
@@ -85,7 +113,7 @@ python selenium_subscriber.py check-email
 #### Check problems from the last 7 days
 
 ```bash
-python selenium_subscriber.py check-email --days 7
+python selenium_subscriber.py check-email --use-oauth --days 7
 ```
 
 ### Configuration

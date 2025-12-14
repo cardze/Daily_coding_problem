@@ -8,10 +8,15 @@ It also provides functionality to check for new problems in your email inbox.
 """
 
 import os
+import sys
 import time
 import tempfile
 import imaplib
 import email
+import base64
+import json
+import pickle
+from pathlib import Path
 from email.header import decode_header
 from datetime import datetime, timedelta
 from selenium import webdriver
@@ -22,6 +27,15 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
+
+# OAuth2 imports (optional, for Gmail)
+try:
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+    from google_auth_oauthlib.flow import InstalledAppFlow
+    OAUTH_AVAILABLE = True
+except ImportError:
+    OAUTH_AVAILABLE = False
 
 
 class DailyCodingProblemSubscriber:
@@ -156,14 +170,18 @@ class DailyCodingProblemSubscriber:
 class DailyCodingProblemEmailChecker:
     """Checks email inbox for new Daily Coding Problems."""
     
-    def __init__(self, email=None, password=None, imap_server=None):
+    # Gmail OAuth2 scopes
+    SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+    
+    def __init__(self, email=None, password=None, imap_server=None, use_oauth=None):
         """
         Initialize the email checker.
         
         Args:
             email (str): Email address to check. If None, reads from DCP_EMAIL environment variable.
-            password (str): Email password. If None, reads from DCP_EMAIL_PASSWORD environment variable.
+            password (str): Email password (optional, for non-OAuth). If None, reads from DCP_EMAIL_PASSWORD.
             imap_server (str): IMAP server address. If None, reads from DCP_IMAP_SERVER or auto-detects.
+            use_oauth (bool): Use OAuth2 for Gmail. If None, auto-detects based on email domain and OAuth availability.
         """
         self.email = email or os.getenv('DCP_EMAIL')
         self.password = password or os.getenv('DCP_EMAIL_PASSWORD')
@@ -171,7 +189,22 @@ class DailyCodingProblemEmailChecker:
         
         if not self.email:
             raise ValueError("Email must be provided either as argument or DCP_EMAIL environment variable")
-        if not self.password:
+        
+        # Determine authentication method
+        domain = self.email.split('@')[1].lower() if '@' in self.email else ''
+        
+        # Auto-determine OAuth usage
+        if use_oauth is None:
+            # Use OAuth for Gmail if available, otherwise require password
+            self.use_oauth = (domain == 'gmail.com' and OAUTH_AVAILABLE)
+        else:
+            self.use_oauth = use_oauth
+        
+        # Check if we have necessary credentials
+        if not self.use_oauth and not self.password:
+            if domain == 'gmail.com' and OAUTH_AVAILABLE:
+                print("Tip: For Gmail, you can use OAuth2 authentication (browser-based login)")
+                print("     Run with --use-oauth flag or just omit --password")
             raise ValueError("Password must be provided either as argument or DCP_EMAIL_PASSWORD environment variable")
         
         # Auto-detect IMAP server if not provided
@@ -179,6 +212,7 @@ class DailyCodingProblemEmailChecker:
             self.imap_server = self._auto_detect_imap_server()
         
         self.mail = None
+        self.creds = None
     
     def _auto_detect_imap_server(self):
         """Auto-detect IMAP server based on email domain."""
@@ -195,17 +229,104 @@ class DailyCodingProblemEmailChecker:
         
         return imap_servers.get(domain, f'imap.{domain}')
     
+    def _get_oauth_credentials(self):
+        """Get OAuth2 credentials for Gmail."""
+        if not OAUTH_AVAILABLE:
+            raise RuntimeError("OAuth2 libraries not available. Install with: pip install google-auth google-auth-oauthlib google-auth-httplib2")
+        
+        creds = None
+        token_file = Path.home() / '.dcp_gmail_token.pickle'
+        
+        # Load existing token if available
+        if token_file.exists():
+            try:
+                with open(token_file, 'rb') as token:
+                    creds = pickle.load(token)
+            except Exception as e:
+                print(f"Warning: Could not load saved token: {e}")
+        
+        # If no valid credentials, get new ones
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                try:
+                    print("Refreshing OAuth2 token...")
+                    creds.refresh(Request())
+                except Exception as e:
+                    print(f"Warning: Could not refresh token: {e}")
+                    creds = None
+            
+            if not creds:
+                # Need to create OAuth client configuration
+                print("\n" + "="*60)
+                print("Gmail OAuth2 Setup Required")
+                print("="*60)
+                print("\nTo use OAuth2 with Gmail, you need to:")
+                print("1. Go to https://console.cloud.google.com/")
+                print("2. Create a new project (or select existing)")
+                print("3. Enable Gmail API")
+                print("4. Create OAuth 2.0 credentials (Desktop app)")
+                print("5. Download the credentials JSON file")
+                print("6. Save it as 'gmail_credentials.json' in this directory")
+                print("\nAlternatively, use --password with an app-specific password")
+                print("="*60 + "\n")
+                
+                # Check if credentials file exists
+                creds_file = Path('gmail_credentials.json')
+                if not creds_file.exists():
+                    raise FileNotFoundError(
+                        "gmail_credentials.json not found. "
+                        "Please follow the setup instructions above or use --password authentication."
+                    )
+                
+                # Run OAuth flow
+                try:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        str(creds_file), self.SCOPES)
+                    creds = flow.run_local_server(port=0)
+                    
+                    # Save credentials for future use
+                    with open(token_file, 'wb') as token:
+                        pickle.dump(creds, token)
+                    print(f"✓ OAuth2 credentials saved to {token_file}")
+                    
+                except Exception as e:
+                    raise RuntimeError(f"OAuth2 flow failed: {e}")
+        
+        return creds
+    
+    def _generate_oauth2_string(self, email, access_token):
+        """Generate OAuth2 authentication string for IMAP."""
+        auth_string = f'user={email}\1auth=Bearer {access_token}\1\1'
+        return auth_string
+    
     def connect(self):
         """Connect to the email server."""
         try:
             print(f"Connecting to {self.imap_server}...")
             self.mail = imaplib.IMAP4_SSL(self.imap_server)
-            self.mail.login(self.email, self.password)
-            print(f"✓ Successfully connected to email: {self.email}")
+            
+            if self.use_oauth:
+                # OAuth2 authentication
+                print("Using OAuth2 authentication...")
+                self.creds = self._get_oauth_credentials()
+                auth_string = self._generate_oauth2_string(self.email, self.creds.token)
+                self.mail.authenticate('XOAUTH2', lambda x: auth_string.encode())
+                print(f"✓ Successfully connected to email: {self.email}")
+            else:
+                # Password-based authentication
+                print("Using password authentication...")
+                self.mail.login(self.email, self.password)
+                print(f"✓ Successfully connected to email: {self.email}")
+            
             return True
+            
         except imaplib.IMAP4.error as e:
             print(f"✗ Failed to connect: {str(e)}")
-            print(f"  Make sure you're using an app-specific password for Gmail/Yahoo/etc.")
+            if not self.use_oauth:
+                print(f"  Make sure you're using an app-specific password for Gmail/Yahoo/etc.")
+            return False
+        except FileNotFoundError as e:
+            print(f"✗ {str(e)}")
             return False
         except Exception as e:
             print(f"✗ Connection error: {str(e)}")
@@ -340,8 +461,13 @@ def main():
     )
     check_parser.add_argument(
         '--password',
-        help='Email password (or set DCP_EMAIL_PASSWORD environment variable)',
+        help='Email password for non-OAuth authentication (or set DCP_EMAIL_PASSWORD)',
         default=None
+    )
+    check_parser.add_argument(
+        '--use-oauth',
+        action='store_true',
+        help='Use OAuth2 for Gmail (browser-based login, no password needed)'
     )
     check_parser.add_argument(
         '--imap-server',
@@ -385,7 +511,8 @@ def main():
             checker = DailyCodingProblemEmailChecker(
                 email=args.email,
                 password=args.password,
-                imap_server=args.imap_server
+                imap_server=args.imap_server,
+                use_oauth=args.use_oauth
             )
             checker.display_new_problems(days=args.days)
             exit(0)
