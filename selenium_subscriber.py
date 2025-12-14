@@ -295,7 +295,13 @@ class DailyCodingProblemEmailChecker:
         return creds
     
     def _generate_oauth2_string(self, email, access_token):
-        """Generate OAuth2 authentication string for IMAP."""
+        """
+        Generate OAuth2 authentication string for IMAP XOAUTH2.
+        
+        Format: user={email}\1auth=Bearer {token}\1\1
+        where \1 is the ASCII character 1 (used as separator in SASL)
+        """
+        # SASL XOAUTH2 format requires \1 (ASCII 1) as field separator
         auth_string = f'user={email}\1auth=Bearer {access_token}\1\1'
         return auth_string
     
@@ -310,7 +316,9 @@ class DailyCodingProblemEmailChecker:
                 print("Using OAuth2 authentication...")
                 self.creds = self._get_oauth_credentials()
                 auth_string = self._generate_oauth2_string(self.email, self.creds.token)
-                self.mail.authenticate('XOAUTH2', lambda x: auth_string.encode())
+                # authenticate expects a callback that returns encoded auth string
+                # The parameter x is the server challenge (not used for XOAUTH2 initial auth)
+                self.mail.authenticate('XOAUTH2', lambda _: auth_string.encode())
                 print(f"✓ Successfully connected to email: {self.email}")
             else:
                 # Password-based authentication
