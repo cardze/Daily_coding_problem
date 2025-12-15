@@ -18,6 +18,7 @@ import json
 import pickle
 from pathlib import Path
 from email.header import decode_header
+from email.utils import parsedate_to_datetime
 from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -172,6 +173,9 @@ class DailyCodingProblemEmailChecker:
     """Checks email inbox for new Daily Coding Problems using Gmail API."""
 
     SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+    
+    # Phrases to skip when extracting problem content
+    SKIP_PHRASES = ['good morning', 'hello', 'hi there', 'unsubscribe', 'http']
 
     def __init__(self, email=None):
         """
@@ -190,18 +194,31 @@ class DailyCodingProblemEmailChecker:
 
     def _authenticate(self):
         """Authenticate with Gmail API and initialize the service."""
-        if os.path.exists("token.json"):
-            self.creds = Credentials.from_authorized_user_file("token.json", self.SCOPES)
-        if not self.creds or not self.creds.valid:
-            if self.creds and self.creds.expired and self.creds.refresh_token:
-                self.creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", self.SCOPES)
-                self.creds = flow.run_local_server(port=0)
-            with open("token.json", "w") as token:
-                token.write(self.creds.to_json())
+        try:
+            if os.path.exists("token.json"):
+                self.creds = Credentials.from_authorized_user_file("token.json", self.SCOPES)
+            
+            if not self.creds or not self.creds.valid:
+                if self.creds and self.creds.expired and self.creds.refresh_token:
+                    self.creds.refresh(Request())
+                else:
+                    if not os.path.exists("credentials.json"):
+                        raise FileNotFoundError(
+                            "credentials.json not found. Please download OAuth2 credentials from Google Cloud Console. "
+                            "See README for setup instructions."
+                        )
+                    flow = InstalledAppFlow.from_client_secrets_file("credentials.json", self.SCOPES)
+                    self.creds = flow.run_local_server(port=0)
+                
+                with open("token.json", "w") as token:
+                    token.write(self.creds.to_json())
 
-        self.service = build("gmail", "v1", credentials=self.creds)
+            self.service = build("gmail", "v1", credentials=self.creds)
+            
+        except FileNotFoundError as e:
+            raise FileNotFoundError(str(e))
+        except Exception as e:
+            raise RuntimeError(f"Gmail API authentication failed: {str(e)}")
 
     def check_new_problems(self, days=1):
         """
@@ -296,7 +313,7 @@ class DailyCodingProblemEmailChecker:
         
         for line in lines:
             # Skip header/greeting lines
-            if any(phrase in line.lower() for phrase in ['good morning', 'hello', 'hi there', 'unsubscribe', 'http']):
+            if any(phrase in line.lower() for phrase in self.SKIP_PHRASES):
                 continue
             
             # Look for problem content indicators
@@ -325,12 +342,11 @@ class DailyCodingProblemEmailChecker:
         """
         try:
             # Parse the date to create directory name
-            # Try to parse the email date
-            from email.utils import parsedate_to_datetime
             try:
                 date_obj = parsedate_to_datetime(problem['date'])
-            except:
+            except (ValueError, TypeError) as e:
                 # Fallback to current date if parsing fails
+                print(f"Warning: Could not parse date '{problem['date']}', using current date")
                 date_obj = datetime.now()
             
             # Format: YYYY_MMDD
