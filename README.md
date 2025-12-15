@@ -49,14 +49,14 @@ python selenium_subscriber.py subscribe --email your.email@example.com --no-head
 
 ### 2. Checking for New Problems in Your Email
 
-After subscribing, you can check your email inbox for new Daily Coding Problems every time you open the app.
+After subscribing, you can check your Gmail inbox for new Daily Coding Problems every time you open the app.
 
-#### Easy Method: OAuth2 (Gmail Only - Recommended)
+#### Easy Method: OAuth2 (Gmail Only - Required)
 
-For Gmail users, the easiest way is to use OAuth2 browser-based authentication (no password needed):
+For Gmail users, the script uses OAuth2 browser-based authentication (no password needed):
 
 ```bash
-python selenium_subscriber.py check-email --email your@gmail.com --use-oauth
+python selenium_subscriber.py check-email --email your@gmail.com
 ```
 
 The first time you run this, you'll need to:
@@ -71,49 +71,23 @@ The first time you run this, you'll need to:
 
 After the first setup, subsequent checks are automatic - no password needed!
 
-#### Alternative Method: App-Specific Password
-
-For non-Gmail accounts or if you prefer not to use OAuth2:
-
-```bash
-python selenium_subscriber.py check-email --email your.email@example.com --password your_app_password
-```
-
-**Important Notes:**
-- For Gmail, Yahoo, and most email providers, you need to use an **app-specific password**, not your regular password
-- The IMAP server is auto-detected based on your email domain (Gmail, Yahoo, Outlook, etc.)
-- You can specify `--days N` to check for problems from the last N days (default is 1)
-
-#### Setting up App-Specific Passwords (if not using OAuth2)
-
-**For Gmail:**
-1. Go to your Google Account settings
-2. Enable 2-factor authentication if not already enabled
-3. Go to Security → App passwords
-4. Generate a new app password for "Mail"
-5. Use this password with the script
-
-**For Yahoo:**
-1. Go to Account Security settings
-2. Generate an app password
-3. Use this password with the script
+#### Important Notes:
+- Only Gmail accounts are supported.
+- Ensure that you have enabled the Gmail API and set up OAuth2 credentials as described above.
+- You can specify `--days N` to check for problems from the last N days (default is 1).
 
 #### Using environment variables for email checking
 
 ```bash
 export DCP_EMAIL=your.email@example.com
 # For OAuth2 (Gmail):
-python selenium_subscriber.py check-email --use-oauth
-
-# For password auth:
-export DCP_EMAIL_PASSWORD=your_app_specific_password
 python selenium_subscriber.py check-email
 ```
 
 #### Check problems from the last 7 days
 
 ```bash
-python selenium_subscriber.py check-email --use-oauth --days 7
+python selenium_subscriber.py check-email --days 7
 ```
 
 ### Configuration

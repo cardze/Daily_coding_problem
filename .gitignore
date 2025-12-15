@@ -5,3 +5,6 @@ __pycache__/
 screenshots/
 gmail_credentials.json
 .dcp_gmail_token.pickle
+credentials.json
+.gitignore
+token.json
