@@ -65,7 +65,7 @@ The first time you run this, you'll need to:
 3. Enable the Gmail API
 4. Create OAuth 2.0 credentials (Desktop app type)
 5. Download the credentials JSON file
-6. Save it as `gmail_credentials.json` in this directory
+6. Save it as `credentials.json` in this directory
 7. Run the command above - a browser will open for you to authorize the app
 8. The authorization is saved, so you won't need to login again
 
@@ -88,6 +88,35 @@ python selenium_subscriber.py check-email
 
 ```bash
 python selenium_subscriber.py check-email --days 7
+```
+
+### 3. Download and Save New Problems
+
+You can automatically download new problems from your email and save them to the repository structure:
+
+```bash
+python selenium_subscriber.py download-problems --email your@gmail.com
+```
+
+This command will:
+1. Connect to your Gmail inbox using OAuth2
+2. Search for new Daily Coding Problem emails
+3. Extract the problem content from each email
+4. Create a new directory for each problem in `problems/YYYY_MMDD/` format
+5. Save the problem description to `readme.md`
+6. Create placeholder Python files (`main.py` and `test.py`) in the `python/` subdirectory
+
+#### Download problems from the last 7 days
+
+```bash
+python selenium_subscriber.py download-problems --days 7
+```
+
+#### Using environment variables
+
+```bash
+export DCP_EMAIL=your@gmail.com
+python selenium_subscriber.py download-problems
 ```
 
 ### Configuration
@@ -116,10 +145,18 @@ python selenium_subscriber.py check-email
 5. Takes a screenshot for verification
 
 **Check-email command:**
-1. Connects to your email inbox via IMAP
+1. Connects to your Gmail inbox via Gmail API using OAuth2
 2. Searches for emails from dailycodingproblem.com
 3. Displays new problems received in the specified time period
 4. Shows the problem subject and date
+
+**Download-problems command:**
+1. Connects to your Gmail inbox via Gmail API using OAuth2
+2. Searches for emails from dailycodingproblem.com
+3. Downloads and extracts the problem content from each email
+4. Creates a new directory structure for each problem (`problems/YYYY_MMDD/`)
+5. Saves the problem description to `readme.md`
+6. Creates placeholder Python solution and test files
 
 After running the subscribe command, check your email for a confirmation message from Daily Coding Problem.
 

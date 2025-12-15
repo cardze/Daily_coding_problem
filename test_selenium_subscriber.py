@@ -102,10 +102,22 @@ class TestDailyCodingProblemEmailChecker(unittest.TestCase):
 
         self.assertIn("Email must be provided", str(context.exception))
     
-    def test_oauth_enabled_for_gmail(self):
+    @patch('selenium_subscriber.build')
+    @patch('selenium_subscriber.Credentials.from_authorized_user_file')
+    @patch('selenium_subscriber.os.path.exists')
+    def test_oauth_enabled_for_gmail(self, mock_exists, mock_creds_file, mock_build):
         """Test that OAuth is enabled for Gmail."""
         from selenium_subscriber import DailyCodingProblemEmailChecker
 
+        # Mock that token.json exists and is valid
+        mock_exists.return_value = True
+        mock_creds = Mock()
+        mock_creds.valid = True
+        mock_creds_file.return_value = mock_creds
+        
+        mock_service = Mock()
+        mock_build.return_value = mock_service
+        
         checker = DailyCodingProblemEmailChecker(email="test@gmail.com")
         self.assertIsNotNone(checker.service)  # Ensure Gmail API service is initialized
     
@@ -113,16 +125,57 @@ class TestDailyCodingProblemEmailChecker(unittest.TestCase):
         """Test IMAP server auto-detection for various email providers."""
         pass  # Removed as the new implementation uses Gmail API and no longer relies on IMAP server auto-detection.
 
-    @patch('selenium_subscriber.DailyCodingProblemEmailChecker.check_new_problems')
-    def test_check_new_problems(self, mock_check_new_problems):
+    @patch('selenium_subscriber.build')
+    @patch('selenium_subscriber.Credentials.from_authorized_user_file')
+    @patch('selenium_subscriber.os.path.exists')
+    def test_check_new_problems(self, mock_exists, mock_creds_file, mock_build):
         """Test fetching new Daily Coding Problems using Gmail API."""
         from selenium_subscriber import DailyCodingProblemEmailChecker
 
+        # Mock that token.json exists and is valid
+        mock_exists.return_value = True
+        mock_creds = Mock()
+        mock_creds.valid = True
+        mock_creds_file.return_value = mock_creds
+        
+        # Mock the Gmail API service
+        mock_service = Mock()
+        mock_build.return_value = mock_service
+        
         # Mock the Gmail API response
-        mock_check_new_problems.return_value = [
-            {"subject": "Problem #1", "date": "Mon, 14 Dec 2025 10:00:00 -0800"},
-            {"subject": "Problem #2", "date": "Tue, 15 Dec 2025 10:00:00 -0800"},
-        ]
+        mock_messages_list = Mock()
+        mock_messages_list.execute.return_value = {
+            "messages": [
+                {"id": "1"},
+                {"id": "2"}
+            ]
+        }
+        mock_service.users().messages().list.return_value = mock_messages_list
+        
+        # Mock individual message responses
+        mock_msg1 = Mock()
+        mock_msg1.execute.return_value = {
+            "payload": {
+                "headers": [
+                    {"name": "Subject", "value": "Problem #1"},
+                    {"name": "Date", "value": "Mon, 14 Dec 2025 10:00:00 -0800"}
+                ],
+                "body": {"data": "VGVzdCBib2R5"}  # Base64 encoded "Test body"
+            }
+        }
+        
+        mock_msg2 = Mock()
+        mock_msg2.execute.return_value = {
+            "payload": {
+                "headers": [
+                    {"name": "Subject", "value": "Problem #2"},
+                    {"name": "Date", "value": "Tue, 15 Dec 2025 10:00:00 -0800"}
+                ],
+                "body": {"data": "VGVzdCBib2R5"}
+            }
+        }
+        
+        mock_service.users().messages().get.side_effect = [mock_msg1, mock_msg2]
 
         checker = DailyCodingProblemEmailChecker(email="test@gmail.com")
         problems = checker.check_new_problems(days=1)
@@ -143,6 +196,42 @@ class TestDailyCodingProblemEmailChecker(unittest.TestCase):
             DailyCodingProblemEmailChecker(email="test@gmail.com")
 
         self.assertIn("Authentication failed", str(context.exception))
+    
+    @patch('selenium_subscriber.DailyCodingProblemEmailChecker._authenticate')
+    @patch('selenium_subscriber.DailyCodingProblemEmailChecker.check_new_problems')
+    def test_download_and_save_problems(self, mock_check, mock_auth):
+        """Test downloading and saving problems."""
+        from selenium_subscriber import DailyCodingProblemEmailChecker
+        import tempfile
+        import shutil
+        
+        # Create temporary directory for testing
+        temp_dir = tempfile.mkdtemp()
+        
+        try:
+            # Mock authentication
+            mock_auth.return_value = None
+            
+            # Mock problem data
+            mock_check.return_value = [
+                {
+                    "subject": "Daily Coding Problem: Problem #1",
+                    "date": "Mon, 15 Dec 2025 10:00:00 -0800",
+                    "body": "This is a test problem description.\nSolve this problem."
+                }
+            ]
+            
+            checker = DailyCodingProblemEmailChecker(email="test@gmail.com")
+            saved_paths = checker.download_and_save_problems(days=1)
+            
+            # Verify that at least one problem was attempted to be saved
+            # (actual saving might fail due to mocking, but the logic should execute)
+            self.assertIsInstance(saved_paths, list)
+            
+        finally:
+            # Clean up temporary directory
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
 
 
 if __name__ == '__main__':

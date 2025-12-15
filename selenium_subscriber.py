@@ -211,7 +211,7 @@ class DailyCodingProblemEmailChecker:
             days (int): Number of days to look back for emails.
 
         Returns:
-            list: List of email subjects and dates for new problems.
+            list: List of email details including subject, date, and content.
         """
         try:
             results = self.service.users().messages().list(
@@ -223,20 +223,198 @@ class DailyCodingProblemEmailChecker:
             problems = []
 
             for message in messages:
-                msg = self.service.users().messages().get(userId="me", id=message["id"]).execute()
+                msg = self.service.users().messages().get(userId="me", id=message["id"], format="full").execute()
                 payload = msg.get("payload", {})
                 headers = payload.get("headers", [])
 
                 subject = next((header["value"] for header in headers if header["name"].lower() == "subject"), "")
                 date = next((header["value"] for header in headers if header["name"].lower() == "date"), "")
+                
+                # Extract email body
+                body = self._get_email_body(payload)
 
-                problems.append({"subject": subject, "date": date})
+                problems.append({
+                    "subject": subject, 
+                    "date": date,
+                    "body": body,
+                    "message_id": message["id"]
+                })
 
             return problems
 
         except Exception as e:
             print(f"✗ Error checking emails: {str(e)}")
             return []
+    
+    def _get_email_body(self, payload):
+        """
+        Extract email body from Gmail API payload.
+        
+        Args:
+            payload: Email payload from Gmail API
+            
+        Returns:
+            str: Decoded email body content
+        """
+        body = ""
+        
+        if "parts" in payload:
+            # Multi-part email
+            for part in payload["parts"]:
+                if part.get("mimeType") == "text/plain":
+                    if "data" in part.get("body", {}):
+                        body = base64.urlsafe_b64decode(part["body"]["data"]).decode("utf-8")
+                        break
+                elif part.get("mimeType") == "text/html" and not body:
+                    # Fallback to HTML if plain text not available
+                    if "data" in part.get("body", {}):
+                        body = base64.urlsafe_b64decode(part["body"]["data"]).decode("utf-8")
+        else:
+            # Single part email
+            if "data" in payload.get("body", {}):
+                body = base64.urlsafe_b64decode(payload["body"]["data"]).decode("utf-8")
+        
+        return body
+    
+    def _extract_problem_content(self, body, subject):
+        """
+        Extract the problem description from email body.
+        
+        Args:
+            body: Email body text
+            subject: Email subject
+            
+        Returns:
+            str: Extracted problem content
+        """
+        # Try to extract the problem statement from the email
+        # Daily Coding Problem emails typically have a specific format
+        
+        lines = body.split('\n')
+        problem_lines = []
+        in_problem = False
+        
+        for line in lines:
+            # Skip header/greeting lines
+            if any(phrase in line.lower() for phrase in ['good morning', 'hello', 'hi there', 'unsubscribe', 'http']):
+                continue
+            
+            # Look for problem content indicators
+            if line.strip() and not line.startswith('>'):
+                # Skip very short lines that are likely formatting
+                if len(line.strip()) > 10 or in_problem:
+                    problem_lines.append(line.rstrip())
+                    in_problem = True
+        
+        # If we couldn't extract properly, return the whole body
+        if not problem_lines:
+            return body
+        
+        return '\n'.join(problem_lines).strip()
+    
+    def save_problem(self, problem, base_dir="problems"):
+        """
+        Save a problem to the repository structure.
+        
+        Args:
+            problem (dict): Problem data including subject, date, and body
+            base_dir (str): Base directory for problems
+            
+        Returns:
+            str: Path to the created problem directory, or None if failed
+        """
+        try:
+            # Parse the date to create directory name
+            # Try to parse the email date
+            from email.utils import parsedate_to_datetime
+            try:
+                date_obj = parsedate_to_datetime(problem['date'])
+            except:
+                # Fallback to current date if parsing fails
+                date_obj = datetime.now()
+            
+            # Format: YYYY_MMDD
+            dir_name = date_obj.strftime("%Y_%m%d")
+            problem_dir = Path(base_dir) / dir_name
+            
+            # Check if directory already exists
+            if problem_dir.exists():
+                print(f"⚠ Problem directory {dir_name} already exists, skipping...")
+                return None
+            
+            # Create directory structure
+            problem_dir.mkdir(parents=True, exist_ok=True)
+            python_dir = problem_dir / "python"
+            python_dir.mkdir(exist_ok=True)
+            
+            # Extract and save problem content
+            problem_content = self._extract_problem_content(problem['body'], problem['subject'])
+            readme_path = problem_dir / "readme.md"
+            
+            with open(readme_path, 'w', encoding='utf-8') as f:
+                f.write(problem_content)
+            
+            # Create placeholder Python files
+            main_py = python_dir / "main.py"
+            with open(main_py, 'w', encoding='utf-8') as f:
+                f.write(f"# {problem['subject']}\n")
+                f.write(f"# Date: {problem['date']}\n\n")
+                f.write("def solution():\n")
+                f.write("    # TODO: Implement solution\n")
+                f.write("    pass\n")
+            
+            test_py = python_dir / "test.py"
+            with open(test_py, 'w', encoding='utf-8') as f:
+                f.write("import pytest\n")
+                f.write("from main import solution\n\n")
+                f.write("def test_solution():\n")
+                f.write("    # TODO: Add test cases\n")
+                f.write("    pass\n")
+            
+            print(f"✓ Saved problem to {problem_dir}")
+            return str(problem_dir)
+            
+        except Exception as e:
+            print(f"✗ Error saving problem: {str(e)}")
+            return None
+    
+    def download_and_save_problems(self, days=1):
+        """
+        Download new problems and save them to the repository.
+        
+        Args:
+            days (int): Number of days to look back for emails
+            
+        Returns:
+            list: Paths to created problem directories
+        """
+        print(f"\n{'='*60}")
+        print(f"Downloading Daily Coding Problems (last {days} day(s))...")
+        print(f"{'='*60}\n")
+        
+        problems = self.check_new_problems(days)
+        
+        if not problems:
+            print("No new Daily Coding Problems found.")
+            print("Make sure you're subscribed and emails aren't in spam folder.")
+            return []
+        
+        print(f"Found {len(problems)} Daily Coding Problem(s)\n")
+        
+        saved_paths = []
+        for i, problem in enumerate(problems, 1):
+            print(f"{i}. {problem['subject']}")
+            print(f"   Date: {problem['date']}")
+            path = self.save_problem(problem)
+            if path:
+                saved_paths.append(path)
+            print()
+        
+        print(f"{'='*60}")
+        print(f"Successfully saved {len(saved_paths)} problem(s)")
+        print(f"{'='*60}\n")
+        
+        return saved_paths
 
     def display_new_problems(self, days=1):
         """
@@ -329,12 +507,26 @@ def main():
         help='Number of days to look back for emails (default: 1)'
     )
     
+    # Download problems command
+    download_parser = subparsers.add_parser('download-problems', help='Download and save new Daily Coding Problems to repository')
+    download_parser.add_argument(
+        '--email',
+        help='Email address to check (or set DCP_EMAIL environment variable)',
+        default=None
+    )
+    download_parser.add_argument(
+        '--days',
+        type=int,
+        default=1,
+        help='Number of days to look back for emails (default: 1)'
+    )
+    
     args = parser.parse_args()
     
     # If no command specified, show help
     if not args.command:
         parser.print_help()
-        print("\nPlease specify a command: 'subscribe' or 'check-email'")
+        print("\nPlease specify a command: 'subscribe', 'check-email', or 'download-problems'")
         exit(1)
     
     if args.command == 'subscribe':
@@ -364,6 +556,19 @@ def main():
             )
             checker.display_new_problems(days=args.days)
             exit(0)
+        except Exception as e:
+            print(f"Fatal error: {str(e)}")
+            exit(1)
+        finally:
+            if checker:
+                checker.close()
+    
+    elif args.command == 'download-problems':
+        checker = None
+        try:
+            checker = DailyCodingProblemEmailChecker(email=args.email)
+            saved_paths = checker.download_and_save_problems(days=args.days)
+            exit(0 if saved_paths else 1)
         except Exception as e:
             print(f"Fatal error: {str(e)}")
             exit(1)
