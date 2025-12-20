@@ -329,6 +329,96 @@ class DailyCodingProblemEmailChecker:
         
         return '\n'.join(problem_lines).strip()
     
+    def _copy_template_files(self, problem_dir, problem):
+        """
+        Copy template files to the new problem directory and populate with problem data.
+        
+        Args:
+            problem_dir (Path): Target problem directory
+            problem (dict): Problem data including subject, date, and body
+        """
+        template_dir = Path("template")
+        
+        if not template_dir.exists():
+            # Fallback to inline templates if template directory doesn't exist
+            print(f"⚠ Template directory not found, using inline templates")
+            return self._create_inline_templates(problem_dir, problem)
+        
+        # Copy and populate readme.md
+        template_readme = template_dir / "readme.md"
+        target_readme = problem_dir / "readme.md"
+        if template_readme.exists():
+            # Use the extracted problem content instead of template
+            problem_content = self._extract_problem_content(problem['body'], problem['subject'])
+            with open(target_readme, 'w', encoding='utf-8') as f:
+                f.write(problem_content)
+        else:
+            problem_content = self._extract_problem_content(problem['body'], problem['subject'])
+            with open(target_readme, 'w', encoding='utf-8') as f:
+                f.write(problem_content)
+        
+        # Copy and populate Python files
+        python_dir = problem_dir / "python"
+        python_dir.mkdir(exist_ok=True)
+        
+        template_main = template_dir / "python" / "main.py"
+        target_main = python_dir / "main.py"
+        if template_main.exists():
+            with open(template_main, 'r', encoding='utf-8') as f:
+                content = f.read()
+            # Replace placeholders
+            content = content.replace("{PROBLEM_TITLE}", problem['subject'])
+            content = content.replace("{PROBLEM_DATE}", problem['date'])
+            with open(target_main, 'w', encoding='utf-8') as f:
+                f.write(content)
+        else:
+            self._create_inline_main(target_main, problem)
+        
+        template_test = template_dir / "python" / "test.py"
+        target_test = python_dir / "test.py"
+        if template_test.exists():
+            with open(template_test, 'r', encoding='utf-8') as f:
+                content = f.read()
+            with open(target_test, 'w', encoding='utf-8') as f:
+                f.write(content)
+        else:
+            self._create_inline_test(target_test)
+    
+    def _create_inline_templates(self, problem_dir, problem):
+        """Fallback method to create files without template directory."""
+        python_dir = problem_dir / "python"
+        python_dir.mkdir(exist_ok=True)
+        
+        # Create readme
+        problem_content = self._extract_problem_content(problem['body'], problem['subject'])
+        readme_path = problem_dir / "readme.md"
+        with open(readme_path, 'w', encoding='utf-8') as f:
+            f.write(problem_content)
+        
+        # Create main.py
+        self._create_inline_main(python_dir / "main.py", problem)
+        
+        # Create test.py
+        self._create_inline_test(python_dir / "test.py")
+    
+    def _create_inline_main(self, target_path, problem):
+        """Create main.py with inline template."""
+        with open(target_path, 'w', encoding='utf-8') as f:
+            f.write(f"# {problem['subject']}\n")
+            f.write(f"# Date: {problem['date']}\n\n")
+            f.write("def solution():\n")
+            f.write("    # TODO: Implement solution\n")
+            f.write("    pass\n")
+    
+    def _create_inline_test(self, target_path):
+        """Create test.py with inline template."""
+        with open(target_path, 'w', encoding='utf-8') as f:
+            f.write("import pytest\n")
+            f.write("from main import solution\n\n")
+            f.write("def test_solution():\n")
+            f.write("    # TODO: Add test cases\n")
+            f.write("    pass\n")
+    
     def save_problem(self, problem, base_dir="problems"):
         """
         Save a problem to the repository structure.
@@ -360,32 +450,9 @@ class DailyCodingProblemEmailChecker:
             
             # Create directory structure
             problem_dir.mkdir(parents=True, exist_ok=True)
-            python_dir = problem_dir / "python"
-            python_dir.mkdir(exist_ok=True)
             
-            # Extract and save problem content
-            problem_content = self._extract_problem_content(problem['body'], problem['subject'])
-            readme_path = problem_dir / "readme.md"
-            
-            with open(readme_path, 'w', encoding='utf-8') as f:
-                f.write(problem_content)
-            
-            # Create placeholder Python files
-            main_py = python_dir / "main.py"
-            with open(main_py, 'w', encoding='utf-8') as f:
-                f.write(f"# {problem['subject']}\n")
-                f.write(f"# Date: {problem['date']}\n\n")
-                f.write("def solution():\n")
-                f.write("    # TODO: Implement solution\n")
-                f.write("    pass\n")
-            
-            test_py = python_dir / "test.py"
-            with open(test_py, 'w', encoding='utf-8') as f:
-                f.write("import pytest\n")
-                f.write("from main import solution\n\n")
-                f.write("def test_solution():\n")
-                f.write("    # TODO: Add test cases\n")
-                f.write("    pass\n")
+            # Copy template files and populate with problem data
+            self._copy_template_files(problem_dir, problem)
             
             print(f"✓ Saved problem to {problem_dir}")
             return str(problem_dir)

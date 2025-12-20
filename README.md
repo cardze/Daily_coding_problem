@@ -103,8 +103,9 @@ This command will:
 2. Search for new Daily Coding Problem emails
 3. Extract the problem content from each email
 4. Create a new directory for each problem in `problems/YYYY_MMDD/` format
-5. Save the problem description to `readme.md`
-6. Create placeholder Python files (`main.py` and `test.py`) in the `python/` subdirectory
+5. Copy template files from `template/` directory
+6. Save the problem description to `readme.md`
+7. Create Python files (`main.py` and `test.py`) from templates with problem-specific data
 
 #### Download problems from the last 7 days
 
@@ -118,6 +119,15 @@ python selenium_subscriber.py download-problems --days 7
 export DCP_EMAIL=your@gmail.com
 python selenium_subscriber.py download-problems
 ```
+
+#### Customizing Templates
+
+The script uses template files from the `template/` directory:
+- `template/readme.md` - Problem description template
+- `template/python/main.py` - Solution implementation template
+- `template/python/test.py` - Unit tests template
+
+You can customize these templates to match your preferred structure and coding style. The automation script will use these templates when creating new problem directories.
 
 ### Configuration
 
