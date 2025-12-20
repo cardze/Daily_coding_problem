@@ -344,18 +344,12 @@ class DailyCodingProblemEmailChecker:
             print(f"⚠ Template directory not found, using inline templates")
             return self._create_inline_templates(problem_dir, problem)
         
-        # Copy and populate readme.md
-        template_readme = template_dir / "readme.md"
+        # Always extract and save problem content to readme.md
+        # (We don't use a template for readme since content comes from email)
+        problem_content = self._extract_problem_content(problem['body'], problem['subject'])
         target_readme = problem_dir / "readme.md"
-        if template_readme.exists():
-            # Use the extracted problem content instead of template
-            problem_content = self._extract_problem_content(problem['body'], problem['subject'])
-            with open(target_readme, 'w', encoding='utf-8') as f:
-                f.write(problem_content)
-        else:
-            problem_content = self._extract_problem_content(problem['body'], problem['subject'])
-            with open(target_readme, 'w', encoding='utf-8') as f:
-                f.write(problem_content)
+        with open(target_readme, 'w', encoding='utf-8') as f:
+            f.write(problem_content)
         
         # Copy and populate Python files
         python_dir = problem_dir / "python"
