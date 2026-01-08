@@ -1,2 +1,11 @@
 *.pyc
 __pycache__/
+.env
+*.png
+screenshots/
+gmail_credentials.json
+.dcp_gmail_token.pickle
+credentials.json
+.gitignore
+token.json
+problems/2025_1215/
